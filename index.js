@@ -56,7 +56,7 @@ app.listen(PORT, "0.0.0.0", () => {
 });
 
 // =====================================================
-// รายชื่อโซน
+// รายชื่อยศทั้งหมด
 // =====================================================
 
 const regions = {
@@ -160,65 +160,48 @@ const regions = {
     ],
 
     // =================================================
-    // โซนใต้
-    // เหลือ 5 รายการตามที่ต้องการ
+    // โซนใต้ - ครบทั้งหมด
     // =================================================
 
     "โซนใต้": [
         "🌊 зโซนชุมพร®",
+        "🌊 зโซนระนอง®",
+        "🌊 зโซนสุราษฎร์ธานี®",
+        "🌊 зโซนพังงา®",
         "🌊 зโซนกระบี่®",
         "🌊 зโซนนครศรีธรรมราช®",
-        "🌊 зโซนนราธิวาส®",
-        "🌊 зโซนปัตตานี®"
+        "🌊 зโซนภูเก็ต®",
+        "🌊 зโซนตรัง®",
+        "🌊 зโซนพัทลุง®",
+        "🌊 зโซนสงขลา®",
+        "🌊 зโซนสตูล®",
+        "🌊 зโซนปัตตานี®",
+        "🌊 зโซนยะลา®",
+        "🌊 зโซนนราธิวาส®"
     ]
 };
 
 // =====================================================
-// รวม Role ทั้งหมด
+// รวมยศทุกโซน
 // =====================================================
 
 const allZones = Object.values(regions).flat();
 
 // =====================================================
-// Emoji ของแต่ละโซน
+// Emoji หน้าเมนู
 // =====================================================
 
 const regionEmoji = {
-
     "โซนเหนือ": "🏔️",
     "โซนอีสาน": "🌾",
     "โซนกลาง": "🏙️",
     "โซนตะวันออก": "🌊",
     "โซนตะวันตก": "⛰️",
     "โซนใต้": "🌴"
-
 };
 
 // =====================================================
-// ดึง Role ที่มีอยู่จริงใน Server
-// =====================================================
-
-function getAvailableRegions(guild) {
-
-    const result = {};
-
-    for (const [region, zones] of Object.entries(regions)) {
-
-        result[region] = zones.filter(zone => {
-
-            return guild.roles.cache.some(
-                role => role.name === zone
-            );
-
-        });
-
-    }
-
-    return result;
-}
-
-// =====================================================
-// แปลงชื่อ Role ให้แสดงเฉพาะชื่อจังหวัด
+// แปลงชื่อยศให้แสดงเฉพาะชื่อพื้นที่
 // =====================================================
 
 function getDisplayZoneName(zone) {
@@ -242,13 +225,8 @@ function getDisplayZoneName(zone) {
 const commands = [
 
     new SlashCommandBuilder()
-
         .setName("setup-role")
-
-        .setDescription(
-            "ติดตั้งระบบรับยศโซน"
-        )
-
+        .setDescription("ติดตั้งระบบรับยศโซน")
         .setDefaultMemberPermissions(
             PermissionFlagsBits.Administrator
         )
@@ -274,15 +252,12 @@ client.once("ready", async () => {
     try {
 
         await rest.put(
-
             Routes.applicationCommands(
                 client.user.id
             ),
-
             {
                 body: commands
             }
-
         );
 
         console.log(
@@ -346,7 +321,9 @@ client.on(
                     ephemeral: true
                 });
 
+                // =================================================
                 // แสดงครบทั้ง 6 โซน
+                // =================================================
 
                 const regionNames =
                     Object.keys(regions);
@@ -399,7 +376,7 @@ client.on(
                 }
 
                 // =================================================
-                // สร้างเมนู 6 โซน
+                // Menu 6 โซน
                 // =================================================
 
                 const regionOptions =
@@ -416,8 +393,7 @@ client.on(
                             )
 
                             .setEmoji(
-                                regionEmoji[region] ||
-                                "📍"
+                                regionEmoji[region]
                             );
 
                     });
@@ -438,7 +414,7 @@ client.on(
                         );
 
                 // =================================================
-                // ปุ่ม Reset
+                // Reset Button
                 // =================================================
 
                 const resetButton =
@@ -488,7 +464,7 @@ client.on(
 
                 });
 
-                // ลบคำสั่ง
+                // ลบคำสั่ง /setup-role
 
                 await interaction.deleteReply()
                     .catch(() => {});
@@ -505,12 +481,9 @@ client.on(
             // =================================================
 
             if (
-
                 interaction.isStringSelectMenu() &&
-
                 interaction.customId ===
                 "zone_region"
-
             ) {
 
                 await interaction.deferReply({
@@ -520,31 +493,23 @@ client.on(
                 const region =
                     interaction.values[0];
 
-                const availableRegions =
-                    getAvailableRegions(
-                        interaction.guild
-                    );
+                // =================================================
+                // ใช้รายชื่อทั้งหมด
+                // ไม่ตัด Role ที่ยังไม่มี
+                // =================================================
 
                 const zones =
-                    availableRegions[region];
+                    regions[region];
 
-                if (!zones) {
+                if (
+                    !zones ||
+                    zones.length === 0
+                ) {
 
                     return interaction.editReply({
 
                         content:
                             "❌ ไม่พบข้อมูลโซนนี้"
-
-                    });
-
-                }
-
-                if (zones.length === 0) {
-
-                    return interaction.editReply({
-
-                        content:
-                            `❌ ยังไม่มี Role สำหรับ${region} ในเซิร์ฟเวอร์`
 
                     });
 
@@ -561,7 +526,7 @@ client.on(
                     );
 
                 // =================================================
-                // สร้างรายการ Role
+                // สร้างรายการยศทั้งหมด
                 // =================================================
 
                 const zoneOptions =
@@ -593,7 +558,7 @@ client.on(
                     });
 
                 // =================================================
-                // Menu
+                // Menu ยศ
                 // =================================================
 
                 const zoneMenu =
@@ -604,7 +569,7 @@ client.on(
                         )
 
                         .setPlaceholder(
-                            `📍 เลือกโซนของคุณในภาค${displayRegion}`
+                            `📍 เลือกยศในโซน${displayRegion}`
                         )
 
                         .addOptions(
@@ -612,13 +577,13 @@ client.on(
                         );
 
                 // =================================================
-                // ส่ง Menu
+                // ส่งเมนู
                 // =================================================
 
                 await interaction.editReply({
 
                     content:
-                        `📍 **กรุณาเลือกโซนของคุณใน ภาค${displayRegion}**`,
+                        `📍 **กรุณาเลือกยศของคุณในโซน${displayRegion}**`,
 
                     components: [
 
@@ -635,16 +600,13 @@ client.on(
             }
 
             // =================================================
-            // เลือก Role
+            // เลือกยศ / รับ Role
             // =================================================
 
             if (
-
                 interaction.isStringSelectMenu() &&
-
                 interaction.customId ===
                 "zone_select"
-
             ) {
 
                 await interaction.deferReply({
@@ -661,7 +623,7 @@ client.on(
                     interaction.member;
 
                 // =================================================
-                // หา Role
+                // หา Role จริงใน Discord
                 // =================================================
 
                 const zoneRole =
@@ -675,7 +637,7 @@ client.on(
                     return interaction.editReply({
 
                         content:
-                            `❌ ไม่พบยศ ${getDisplayZoneName(zone)}`
+                            `❌ ไม่พบยศ **${getDisplayZoneName(zone)}** ในเซิร์ฟเวอร์`
 
                     });
 
@@ -731,7 +693,7 @@ client.on(
 
                         content:
                             "❌ Bot ไม่สามารถแจกยศนี้ได้\n\n" +
-                            "ให้ลาก Role ของ Bot " +
+                            "กรุณาลาก Role ของ Bot " +
                             "ไว้เหนือ Role โซนทั้งหมด"
 
                     });
@@ -739,7 +701,7 @@ client.on(
                 }
 
                 // =================================================
-                // ลบยศเก่า
+                // ลบยศโซนเก่าทั้งหมด
                 // =================================================
 
                 for (
@@ -753,15 +715,11 @@ client.on(
                         );
 
                     if (
-
                         oldRole &&
-
                         oldRole.id !== zoneRole.id &&
-
                         member.roles.cache.has(
                             oldRole.id
                         )
-
                     ) {
 
                         if (
@@ -773,7 +731,7 @@ client.on(
 
                                 await member.roles.remove(
                                     oldRole,
-                                    "เปลี่ยนโซน"
+                                    "เปลี่ยนยศโซน"
                                 );
 
                                 console.log(
@@ -808,11 +766,8 @@ client.on(
                     ) {
 
                         await member.roles.add(
-
                             zoneRole,
-
                             "รับยศโซน"
-
                         );
 
                     }
@@ -865,12 +820,9 @@ client.on(
             // =================================================
 
             if (
-
                 interaction.isButton() &&
-
                 interaction.customId ===
                 "zone_reset"
-
             ) {
 
                 await interaction.deferReply({
@@ -917,7 +869,7 @@ client.on(
                 }
 
                 // =================================================
-                // ลบ Role โซน
+                // ลบยศทั้งหมด
                 // =================================================
 
                 let removed = 0;
@@ -933,30 +885,22 @@ client.on(
                         );
 
                     if (
-
                         role &&
-
                         member.roles.cache.has(
                             role.id
                         )
-
                     ) {
 
                         if (
-
                             role.position <
                             botMember.roles.highest.position
-
                         ) {
 
                             try {
 
                                 await member.roles.remove(
-
                                     role,
-
                                     "รีเซ็ตยศโซน"
-
                                 );
 
                                 removed++;
